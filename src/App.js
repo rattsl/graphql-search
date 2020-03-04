@@ -4,10 +4,11 @@ import { ApolloProvider } from 'react-apollo';
 import { Query } from 'react-apollo';
 import { SEARCH_REPOSITORIES } from './graphql';
 
+const PER_PAGE = 5;
 const DEFAULT_STATE = {
   after: null,
   before: null,
-  first: 5,
+  first: PER_PAGE,
   last: null,
   query: 'フロントエンドエンジニア'
 };
@@ -30,6 +31,16 @@ class App extends Component {
   hundleSubmit(event) {
     event.preventDefault();
   }
+
+  goNext(search) {
+    this.setState({
+      first: PER_PAGE,
+      after: search.pageInfo.endCursor,
+      last: null,
+      before: null
+    });
+  }
+
   render() {
     const { after, before, first, last, query } = this.state;
     console.log({ query });
@@ -66,6 +77,9 @@ class App extends Component {
                     );
                   })}
                 </ul>
+                {search.pageInfo.hasNextPage === true ? (
+                  <button onClick={this.goNext.bind(this, search)}>next</button>
+                ) : null}
               </React.Fragment>
             );
           }}
