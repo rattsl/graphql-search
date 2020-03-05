@@ -6,7 +6,11 @@ import { SEARCH_REPOSITORIES } from './graphql';
 
 const StarButton = props => {
   const totalCount = props.node.stargazers.totalCount;
-  return <button>{totalCount === 1 ? '1 star' : `${totalCount} stars`}</button>;
+  const viewerHasStarred = props.node.viewerHasStarred;
+  const totalCountUnit = totalCount === 1 ? '1 star' : `${totalCount} stars`;
+  const staredUnit = viewerHasStarred === true ? 'stared' : '-';
+  const title = `${totalCountUnit} | ${staredUnit}`;
+  return <button>{title}</button>;
 };
 
 const PER_PAGE = 5;
@@ -83,7 +87,6 @@ class App extends Component {
                 <ul>
                   {search.edges.map(edge => {
                     const node = edge.node;
-                    // const viewerHasStarred = node.viewerHasStarred;
                     // const starUnit = viewerHasStarred === false ? '-' : null;
                     // const starJudgeTitle = `${node.stargazers.totalCount} stars | ${starUnit}`;
                     return (
