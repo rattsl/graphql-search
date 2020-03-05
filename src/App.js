@@ -4,7 +4,7 @@ import { ApolloProvider, Query, Mutation } from 'react-apollo';
 import { SEARCH_REPOSITORIES, ADD_STAR, REMOVE_STAR } from './graphql';
 
 const StarButton = props => {
-  const node = props.node;
+  const { node, after, before, first, last, query } = props;
   const totalCount = node.stargazers.totalCount;
   const viewerHasStarred = node.viewerHasStarred;
   const totalCountUnit = totalCount === 1 ? '1 star' : `${totalCount} stars`;
@@ -26,9 +26,19 @@ const StarButton = props => {
   //関数starStatusではなく、コンポーネントStarStatusとしてreturn
   //mutationコンポーネントでラップ
   return (
-    <Mutation mutation={viewerHasStarred ? REMOVE_STAR : ADD_STAR}>
-      {//コールバック
-      addOrRemoveStar => <StarStatus addOrRemoveStar={addOrRemoveStar} />}
+    <Mutation
+      mutation={viewerHasStarred ? REMOVE_STAR : ADD_STAR}
+      refetchQueries={mutationResult => {
+        console.log(mutationResult);
+        return [
+          {
+            query: SEARCH_REPOSITORIES,
+            variables: { after, before, first, last, query }
+          }
+        ];
+      }}
+    >
+      {addOrRemoveStar => <StarStatus addOrRemoveStar={addOrRemoveStar} />}
     </Mutation>
   );
 };
@@ -113,7 +123,10 @@ class App extends Component {
                           {node.name}
                         </a>
                         &nbsp;
-                        <StarButton node={node}></StarButton>
+                        <StarButton
+                          node={node}
+                          {...{ after, before, first, last, query }}
+                        ></StarButton>
                       </li>
                     );
                   })}
