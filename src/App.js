@@ -1,16 +1,36 @@
 import React, { Component } from 'react';
 import client from './client';
-import { ApolloProvider } from 'react-apollo';
-import { Query } from 'react-apollo';
-import { SEARCH_REPOSITORIES } from './graphql';
+import { ApolloProvider, Query, Mutation } from 'react-apollo';
+import { SEARCH_REPOSITORIES, ADD_STAR } from './graphql';
 
 const StarButton = props => {
-  const totalCount = props.node.stargazers.totalCount;
-  const viewerHasStarred = props.node.viewerHasStarred;
+  const node = props.node;
+  const totalCount = node.stargazers.totalCount;
+  const viewerHasStarred = node.viewerHasStarred;
   const totalCountUnit = totalCount === 1 ? '1 star' : `${totalCount} stars`;
   const staredUnit = viewerHasStarred === true ? 'stared' : '-';
   const title = `${totalCountUnit} | ${staredUnit}`;
-  return <button>{title}</button>;
+  const StarStatus = ({ addStar }) => {
+    return (
+      <button
+        onClick={() => {
+          addStar({
+            variables: { input: { starrableId: node.id } }
+          });
+        }}
+      >
+        {title}
+      </button>
+    );
+  };
+  //関数starStatusではなく、コンポーネントStarStatusとしてreturn
+  //mutationコンポーネントでラップ
+  return (
+    <Mutation mutation={ADD_STAR}>
+      {//コールバック
+      addStar => <StarStatus addStar={addStar} />}
+    </Mutation>
+  );
 };
 
 const PER_PAGE = 5;
@@ -87,8 +107,6 @@ class App extends Component {
                 <ul>
                   {search.edges.map(edge => {
                     const node = edge.node;
-                    // const starUnit = viewerHasStarred === false ? '-' : null;
-                    // const starJudgeTitle = `${node.stargazers.totalCount} stars | ${starUnit}`;
                     return (
                       <li key={node.id}>
                         <a href={node.url} target="_brank">
