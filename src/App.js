@@ -15,7 +15,27 @@ const StarButton = props => {
       <button
         onClick={() => {
           addOrRemoveStar({
-            variables: { input: { starrableId: node.id } }
+            variables: { input: { starrableId: node.id } },
+            update: (store, { data: { addStar, removeStar } }) => {
+              const { starrable } = addStar || removeStar;
+              console.log(starrable);
+              const data = store.readQuery({
+                query: SEARCH_REPOSITORIES,
+                variables: { after, before, first, last, query }
+              });
+              const edges = data.search.edges;
+              const newEdges = edges.map(edge => {
+                if (edge.node.id === node.id) {
+                  const totalCount = edge.node.stargazers.totalCount;
+                  const diff = starrable.viewerHasStarred ? 1 : -1;
+                  const newTotalCount = totalCount + diff;
+                  edge.node.stargazers.totalCount = newTotalCount;
+                }
+                return edge;
+              });
+              data.search.edges = newEdges;
+              store.writeQuery({ query: SEARCH_REPOSITORIES, data });
+            }
           });
         }}
       >
@@ -26,18 +46,7 @@ const StarButton = props => {
   //関数starStatusではなく、コンポーネントStarStatusとしてreturn
   //mutationコンポーネントでラップ
   return (
-    <Mutation
-      mutation={viewerHasStarred ? REMOVE_STAR : ADD_STAR}
-      refetchQueries={mutationResult => {
-        console.log(mutationResult);
-        return [
-          {
-            query: SEARCH_REPOSITORIES,
-            variables: { after, before, first, last, query }
-          }
-        ];
-      }}
-    >
+    <Mutation mutation={viewerHasStarred ? REMOVE_STAR : ADD_STAR}>
       {addOrRemoveStar => <StarStatus addOrRemoveStar={addOrRemoveStar} />}
     </Mutation>
   );
@@ -91,7 +100,6 @@ class App extends Component {
 
   render() {
     const { after, before, first, last, query } = this.state;
-    console.log({ query });
     return (
       <ApolloProvider client={client}>
         <form onSubmit={this.hundleSubmit}>
@@ -137,7 +145,6 @@ class App extends Component {
                 {search.pageInfo.hasNextPage === true ? (
                   <button onClick={this.goNext.bind(this, search)}>next</button>
                 ) : null}
-                {console.log(search)}
               </React.Fragment>
             );
           }}
